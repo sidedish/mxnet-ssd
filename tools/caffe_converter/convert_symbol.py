@@ -63,8 +63,12 @@ def conv_param_to_string(param):
 
 def find_layer(layers, name):
     for layer in layers:
-        if layer.name == name:
-            return layer
+        #print("layer ==== %s" % (layer))
+        #print("layer.top ==== %s" % (layer.top[0]))
+        #if layer.name == name:
+        for top in layer.top:
+            if top == name:
+                return layer
     return None
 
 def proto2script(proto_file):
@@ -191,7 +195,9 @@ def proto2script(proto_file):
             param_string = "act_type='prelu', slope=%f" % param.filler.value
             need_flatten[name] = need_flatten[mapping[layer[i].bottom[0]]]
         if layer[i].type == 'Normalize':
+            #print("bottom1====%s" % (layer[i].bottom[0]))
             bottom = re.sub('[-/]', '_', layer[i].bottom[0])
+            #print("bottom2====%s" % (bottom))
             conv_layer = find_layer(layer, bottom)
             assert conv_layer is not None
             param = layer[i].norm_param
@@ -222,9 +228,18 @@ def proto2script(proto_file):
             else:
                 bottom_order = [0]
             try:
+                print("layer====%s" % (layer[i].name))
+                print("min_size====%s" % (param.min_size))
+                print("max_size====%s" % (param.max_size))
+                print("param====%s" % (param))
                 min_size = param.min_size[0] / input_dim[2]
-                max_size = math.sqrt(param.min_size[0] * param.max_size[0]) / input_dim[2]
-                sizes = '(%f, %f)' %(min_size, max_size)
+                if param.max_size:
+                    print("hello====1")
+                    max_size = math.sqrt(param.min_size[0] * param.max_size[0]) / input_dim[2]
+                    sizes = '(%f, %f)' %(min_size, max_size)
+                else:
+                    print("hello====2")
+                    sizes = '(%f)' %(min_size)
             except AttributeError:
                 min_size = param.min_size[0] / input_dim[2]
                 sizes = '(%f)' %(min_size)
